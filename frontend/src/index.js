@@ -1,7 +1,7 @@
 import io from 'socket.io-client'
 import adapter from 'webrtc-adapter'
 
-const socket = io.connect('http://localhost:3000')
+const socket = io.connect('/')
 const configuration = {
     iceServers: [
         { 'url': 'stun:stun.services.mozilla.com' },

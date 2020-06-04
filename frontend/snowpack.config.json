@@ -3,5 +3,11 @@
     "mount:public": "mount public --to /",
     "mount:src": "mount src --to /_dist_"
   },
+  "proxy": {
+    "/socket.io": {
+      "ws": true,
+      "target": "http://localhost:3000"
+    }
+  },
   "plugins": []
 }
