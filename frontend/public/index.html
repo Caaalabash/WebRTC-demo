@@ -3,24 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <title>WebRTC</title>
-    <style>
-        #yours {
-            width: 100px;
-            border: 1px solid #ddd;
-        }
-        #theirs {
-            width: 500px;
-        }
-    </style>
 </head>
 <body>
 <div>
-    <input type="text" id="input">
+    <input type="text" id="input" placeholder="请输入房间名">
+    <input type="text" id="name" placeholder="请输入昵称">
     <button id="button">加入</button>
 </div>
 <div>
     <video id="yours" autoplay></video>
-    <video id="theirs" autoplay></video>
 </div>
 <script type="module" src="/_dist_/index.js"></script>
 </body>

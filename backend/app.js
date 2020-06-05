@@ -1,39 +1,24 @@
-const io = require('socket.io')().listen(3000)
+const io = require('socket.io')().listen(3002)
 
 io.on('connection', socket => {
-    socket.send({ type: 'log', message: 'Socket已连接' })
-
     socket.on('message', data => {
-        if (data.type === 'join') {
-            // 离开其他房间
-            Object.values(socket.rooms).filter(i => i !== socket.id).forEach(room => {
-                socket.leave(room, () => {
-                    socket.to(room).send({ type: 'log', message: `user ${socket.id} 离开了房间` })
-                    socket.send({ type: 'log', message: `自动退出房间${room}` })
-                })
-            })
-            const roomSize = (io.sockets.adapter.rooms[data.message] || { length: 0 }).length
-            if (roomSize === 0) {
-                socket.join(data.message, () => {
-                    socket.send({ type: 'log', message: `创建房间${data.message}` })
-                })
-            } else if (roomSize === 1) {
-                socket.join(data.message, () => {
-                    socket.send({ type: 'log', message: `加入房间${data.message}` })
-                    socket.to(data.message).send({ type: 'log', message: `${socket.id}加入了房间` })
-                    socket.to(data.message).send({ type: 'member', message: socket.id })
-                })
-            } else if (roomSize === 2) {
-                socket.send({ type: 'log', message: `房间已满` })
-            }
-        } else {
-            Object.values(socket.rooms).filter(i => i !== socket.id).forEach(room => {
-                socket.to(room).send(data)
-            })
-        }
-    })
+        const joinedRooms = Object.values(socket.rooms).filter(i => i !== socket.id)
 
-    socket.on('disconnect', () => {
-        socket.send({ type: 'log', message: 'Socket已断开连接' })
+        if (data.type === 'join') {
+            const { room, name } = data.message
+            socket.name = name
+
+            joinedRooms.forEach(joinedRoom => {
+                socket.leave(joinedRoom, () => {
+                    socket.to(room).send({ type: 'member-leave', name: socket.name })
+                })
+            })
+            socket.join(room, () => {
+                socket.to(room).send({ type: 'member-join', name: socket.name })
+            })
+        } else {
+            const target = Object.values(io.sockets.sockets).find(i => i.name === data.to)
+            target.send({ ...data, name: socket.name })
+        }
     })
 })
