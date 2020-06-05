@@ -12,15 +12,22 @@ io.on('connection', socket => {
                     socket.send({ type: 'log', message: `自动退出房间${room}` })
                 })
             })
-            // 加入目标房间
-            socket.join(data.message, () => {
-                socket.to(data.message).send({ type: 'member', message: socket.id })
-                socket.send({ type: 'log', message: `加入房间${data.message}` })
-                socket.to(data.message).send({ type: 'log', message: `${socket.id}加入了房间` })
-            })
+            const roomSize = (io.sockets.adapter.rooms[data.message] || { length: 0 }).length
+            if (roomSize === 0) {
+                socket.join(data.message, () => {
+                    socket.send({ type: 'log', message: `创建房间${data.message}` })
+                })
+            } else if (roomSize === 1) {
+                socket.join(data.message, () => {
+                    socket.send({ type: 'log', message: `加入房间${data.message}` })
+                    socket.to(data.message).send({ type: 'log', message: `${socket.id}加入了房间` })
+                    socket.to(data.message).send({ type: 'member', message: socket.id })
+                })
+            } else if (roomSize === 2) {
+                socket.send({ type: 'log', message: `房间已满` })
+            }
         } else {
             Object.values(socket.rooms).filter(i => i !== socket.id).forEach(room => {
-                console.log(data)
                 socket.to(room).send(data)
             })
         }
