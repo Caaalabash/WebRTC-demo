@@ -16,9 +16,18 @@ io.on('connection', socket => {
             )
             // 加入当前房间
             socket.join(payload.room, () => {
+                socket.emit('joined')
                 socket.send({ type: 'log', payload: `已加入房间【${payload.room}】` })
                 socket.to(payload.room).send({ type: 'member-join', from: socket.from })
             })
+        } else if (type === 'leave') {
+            // 离开其他房间
+            Object.values(socket.rooms).filter(i => i !== socket.id).forEach(joinedRoom =>
+                socket.leave(joinedRoom, () =>
+                    socket.to(joinedRoom).send({ type: 'member-leave', from: socket.from })
+                )
+            )
+            socket.send({ type: 'leaved' })
         } else {
             const target = Object.values(io.sockets.sockets).find(i => i.from === to)
             target && target.send({ type, payload, from: socket.from })
