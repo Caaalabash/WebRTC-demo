@@ -2,7 +2,7 @@
   <div id="app">
       <div class="header">
           <img src="./assets/logo.png" alt="" class="header-logo">
-          <p class="header-desc">WebRTC Chat - {{ joined ? room : '' }}</p>
+          <p class="header-desc">WebRTC Chat {{ joined ? `- ${room}` : '' }}</p>
       </div>
       <div v-show="!joined" class="join-container">
           <input type="text" placeholder="Your Room" class="input" v-model="room">
@@ -42,9 +42,9 @@ export default {
             }
         }
     },
-    mounted() {
+    async mounted() {
+        await this.setupYourCamera()
         this.setupSocket()
-        this.setupYourCamera()
     },
     methods: {
         joinRoom() {
@@ -57,7 +57,7 @@ export default {
                     }
                 })
             } else {
-                new LightTip.error('仅限英文字母和数字')
+                new LightTip().error('仅限英文字母和数字')
             }
         },
         createPeerConnection(stream, calleeId) {
@@ -84,7 +84,7 @@ export default {
             try {
                 this.localStream = await navigator.mediaDevices.getUserMedia({ audio: false, video: true })
             } catch (e) {
-                new LightTip().error('无法使用媒体设备')
+                new LightTip().error('无法使用媒体设备, 请设置权限后刷新重试')
             }
         },
         setupSocket() {
@@ -102,7 +102,6 @@ export default {
                     this.socket.send({ type: 'offer', payload: offer, to: from })
                     new LightTip(`【${from}】加入了房间`)
                 } else if (type === 'offer') {
-                    console.log(this.pcMap[from])
                     this.$set(this.pcMap, from, this.createPeerConnection(this.localStream, from))
                     await this.pcMap[from].setRemoteDescription(new RTCSessionDescription(payload))
                     const answer = await this.pcMap[from].createAnswer()
