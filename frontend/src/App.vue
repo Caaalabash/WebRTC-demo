@@ -64,11 +64,17 @@ export default {
             }
         },
         createPeerConnection(stream, calleeId) {
-            const pc = new RTCPeerConnection({
-                iceServers: [
-                    { 'url': 'stun:stun.services.mozilla.com' },
-                    { 'url': 'stun:stun.l.google.com:19302' }
-                ]
+            const pc = new RTCPeerConnection( {
+                'iceServers': [
+                    { 'urls': ['stun:111.229.115.45:3478'] },
+                    { 'urls': ['stun:stun.l.google.com:19302'] },
+                    { 'urls': ['stun:stun.services.mozilla.com'] },
+                    {
+                        'urls':['turn:111.229.115.45:3478'],
+                        'username':'calabash',
+                        'credential':'calabashisbest'
+                    },
+                ],
             })
             for (const track of stream.getTracks()) {
                 pc.addTrack(track)
