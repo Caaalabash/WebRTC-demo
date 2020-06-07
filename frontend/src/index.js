@@ -1,33 +1,60 @@
 import io from 'socket.io-client'
 import adapter from 'webrtc-adapter'
 
-// snowpack的proxy不太行，开发模式下直接使用后端地址localhost:3002
-const socket = io.connect('/')
-const configuration = {
-    iceServers: [
-        { 'url': 'stun:stun.services.mozilla.com' },
-        { 'url': 'stun:stunserver.org' },
-        { 'url': 'stun:stun.l.google.com:19302' }
-    ]
-}
-const mediaConstraints = {
-    audio: false,
-    video: true
-}
-const sendMessage = (type, message) => socket.send({ type, message })
-const setVideoStream = (id, stream) => document.getElementById(id).srcObject = stream
+const pcMap = {}
+const socket = io.connect('localhost:3002')
 
-const userMap = {}
+socket.on('connect_error', () => new LightTip().error('信令服务器连接失败'))
+socket.on('connect', () => new LightTip().success('信令服务器连接成功'))
+socket.on('message', async ({ type, payload, from }) => {
+    if (type === 'member-join') {
+        const pc = createPeerConnection(localStream, from)
+        const offer = await pc.createOffer()
+        await pc.setLocalDescription(new RTCSessionDescription(offer))
+        pcMap[from] = pc
+        socket.send({ type: 'offer', payload: offer, to: from })
+        new LightTip(`【${from}】加入了房间`)
+    } else if (type === 'offer') {
+        const pc = createPeerConnection(localStream, from)
+        await pc.setRemoteDescription(new RTCSessionDescription(payload))
+        const answer = await pc.createAnswer()
+        await pc.setLocalDescription(new RTCSessionDescription(answer))
+
+        pcMap[from] = pc
+        socket.send({ type: 'answer', payload: answer, to: from })
+    } else if (type === 'answer') {
+        await pcMap[from].setRemoteDescription(new RTCSessionDescription(payload))
+    } else if (type === 'candidate') {
+        await pcMap[from].addIceCandidate(new RTCIceCandidate(payload))
+    } else if (type === 'member-leave' && pcMap[from]) {
+        pcMap[from].close()
+        delete pcMap[from]
+        document.body.removeChild(document.getElementById(from))
+        new LightTip(`【${from}】离开了房间`)
+    } else if (type === 'log') {
+        new LightTip(payload)
+    }
+})
+
+let localStream = null
+
 document.getElementById('button').addEventListener('click', () => {
-    sendMessage('join', {
-        room: document.getElementById('input').value,
-        name: document.getElementById('name').value
+    socket.send({
+        type: 'join',
+        payload: {
+            room: document.getElementById('input').value.trim(),
+            name: document.getElementById('name').value.trim()
+        }
     })
 })
 
-
-function newPeerConnection(stream, id) {
-    const pc = new RTCPeerConnection(configuration)
+function createPeerConnection(stream, calleeId) {
+    const pc = new RTCPeerConnection({
+        iceServers: [
+            { 'url': 'stun:stun.services.mozilla.com' },
+            { 'url': 'stun:stun.l.google.com:19302' }
+        ]
+    })
     for (const track of stream.getTracks()) {
         pc.addTrack(track)
     }
@@ -36,36 +63,25 @@ function newPeerConnection(stream, id) {
         ms.addTrack(e.track)
 
         const video = document.createElement('video')
-        video.id = id
+        video.id = calleeId
         video.autoplay = true
         video.srcObject = ms
         document.body.appendChild(video)
     }
-    pc.onicecandidate = e => e.candidate && socket.send({ type: 'candidate', message: e.candidate, to: id })
+    pc.onicecandidate = e => {
+        e.candidate && socket.send({ type: 'candidate', payload: e.candidate, to: calleeId })
+    }
     return pc
 }
 
-;(async () => {
-    const localStream = await navigator.mediaDevices.getUserMedia(mediaConstraints)
-    setVideoStream('yours', localStream)
+async function setupYourCamera() {
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: false, video: true })
+        document.getElementById('yours').srcObject = localStream
+    } catch (e) {
+        new LightTip().error('无法使用媒体设备')
+    }
+}
 
-    socket.on('message', async data => {
-        console.log(`id: ${data.name} type: ${data.type}`)
-        if (data.type === 'member-join') {
-            userMap[data.name] = newPeerConnection(localStream, data.name)
-            const offer = await userMap[data.name].createOffer()
-            await userMap[data.name].setLocalDescription(new RTCSessionDescription(offer))
-            socket.send({ type: 'offer', message: offer, to: data.name })
-        } else if (data.type === 'offer') {
-            userMap[data.name] = newPeerConnection(localStream, data.name)
-            await userMap[data.name].setRemoteDescription(new RTCSessionDescription(data.message))
-            const answer = await userMap[data.name].createAnswer()
-            await userMap[data.name].setLocalDescription(new RTCSessionDescription(answer))
-            socket.send({ type: 'answer', message: answer, to: data.name })
-        } else if (data.type === 'answer') {
-            await userMap[data.name].setRemoteDescription(new RTCSessionDescription(data.message))
-        } else if (data.type === 'candidate') {
-            await userMap[data.name].addIceCandidate(new RTCIceCandidate(data.message))
-        }
-    })
-})()
+setupYourCamera()
+
