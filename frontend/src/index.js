@@ -8,19 +8,18 @@ socket.on('connect_error', () => new LightTip().error('信令服务器连接失�
 socket.on('connect', () => new LightTip().success('信令服务器连接成功'))
 socket.on('message', async ({ type, payload, from }) => {
     if (type === 'member-join') {
-        const pc = createPeerConnection(localStream, from)
-        const offer = await pc.createOffer()
-        await pc.setLocalDescription(new RTCSessionDescription(offer))
-        pcMap[from] = pc
+        pcMap[from] = createPeerConnection(localStream, from)
+        const offer = await pcMap[from].createOffer()
+        await pcMap[from].setLocalDescription(new RTCSessionDescription(offer))
+
         socket.send({ type: 'offer', payload: offer, to: from })
         new LightTip(`【${from}】加入了房间`)
     } else if (type === 'offer') {
-        const pc = createPeerConnection(localStream, from)
-        await pc.setRemoteDescription(new RTCSessionDescription(payload))
-        const answer = await pc.createAnswer()
-        await pc.setLocalDescription(new RTCSessionDescription(answer))
+        pcMap[from] = createPeerConnection(localStream, from)
+        await pcMap[from].setRemoteDescription(new RTCSessionDescription(payload))
+        const answer = await pcMap[from].createAnswer()
+        await pcMap[from].setLocalDescription(new RTCSessionDescription(answer))
 
-        pcMap[from] = pc
         socket.send({ type: 'answer', payload: answer, to: from })
     } else if (type === 'answer') {
         await pcMap[from].setRemoteDescription(new RTCSessionDescription(payload))
