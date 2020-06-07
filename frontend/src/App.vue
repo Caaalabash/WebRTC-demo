@@ -203,6 +203,7 @@ export default {
         flex-wrap: wrap;
     }
     .video-box {
+        display: inline-flex;
         position: relative;
         flex-shrink: 0;
         flex-grow: 0;
@@ -210,9 +211,6 @@ export default {
         margin-right: 10px;
     }
     .video {
-        position: absolute;
-        left: 0;
-        top: 0;
         width: 100%;
         height: 100%;
         min-width: 400px;
@@ -229,7 +227,6 @@ export default {
         height: 30px;
         line-height: 30px;
         text-align: center;
-        z-index: 1;
     }
     .leave-button {
         position: fixed;
