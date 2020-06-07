@@ -30,6 +30,7 @@ export default {
         room: '',
         name: '',
         socket: null,
+        socketConnect: false,
         localStream: null,
         pcMap: {},
         streamMap: {},
@@ -48,7 +49,11 @@ export default {
     },
     methods: {
         joinRoom() {
-            if (/[a-zA-Z0-9]/.test(this.name) && /[a-zA-Z0-9]/.test(this.room)) {
+            if (!this.socketConnect) {
+                new LightTip().error('信令服务器暂未连接，请稍后')
+            } else if (!/[a-zA-Z0-9]/.test(this.name) || !/[a-zA-Z0-9]/.test(this.room)) {
+                new LightTip().error('仅限英文字母和数字')
+            } else {
                 this.socket.send({
                     type: 'join',
                     payload: {
@@ -56,8 +61,6 @@ export default {
                         name: this.name,
                     }
                 })
-            } else {
-                new LightTip().error('仅限英文字母和数字')
             }
         },
         createPeerConnection(stream, calleeId) {
@@ -90,8 +93,14 @@ export default {
         setupSocket() {
             this.socket = io.connect('/')
 
-            this.socket.on('connect_error', () => new LightTip().error('信令服务器连接失败'))
-            this.socket.on('connect', () => new LightTip().success('信令服务器连接成功'))
+            this.socket.on('connect_error', () => {
+                new LightTip().error('信令服务器连接失败')
+                this.socketConnect = false
+            })
+            this.socket.on('connect', () => {
+                new LightTip().success('信令服务器连接成功')
+                this.socketConnect = true
+            })
             this.socket.on('joined', () => this.joined = true)
             this.socket.on('message', async ({ type, payload, from }) => {
                 if (type === 'member-join') {
