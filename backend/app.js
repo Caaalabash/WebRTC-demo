@@ -1,4 +1,4 @@
-const io = require('socket.io')().listen(3002)
+const io = require('socket.io')().listen(8080)
 
 // 信令服务器设计：
 // 0. 约定传递对象结构为: { type: 事件类型, payload: 载荷, to: 接受方, from: 发送方 }
