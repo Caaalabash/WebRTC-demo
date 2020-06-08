@@ -7,7 +7,7 @@
       <div v-show="!joined" class="join-container">
           <input type="text" placeholder="Your Room" class="input" v-model="room">
           <input type="text" placeholder="Your Nickname" class="input" v-model="name">
-          <div role="button" id="button" class="button" @click="joinRoom">Join</div>
+          <div role="button" class="button" @click="joinRoom">Join</div>
       </div>
       <div v-show="joined" class="video-container">
           <div v-for="entry in Object.entries(totalStream)" :key="entry[0]" class="video-box">
@@ -66,14 +66,8 @@ export default {
         createPeerConnection(stream, calleeId) {
             const pc = new RTCPeerConnection( {
                 'iceServers': [
-                    { 'urls': ['stun:111.229.115.45:3478'] },
                     { 'urls': ['stun:stun.l.google.com:19302'] },
                     { 'urls': ['stun:stun.services.mozilla.com'] },
-                    {
-                        'urls':['turn:111.229.115.45:3478'],
-                        'username':'calabash',
-                        'credential':'calabashisbest'
-                    },
                 ],
             })
             for (const track of stream.getTracks()) {
