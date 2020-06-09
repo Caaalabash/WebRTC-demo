@@ -114,7 +114,7 @@ export default {
                 // 给pcMap中的peerConnection更换媒体源
                 const videoTrack = this.localStream.getVideoTracks()[0]
                 for (let pc of Object.values(this.pcMap)) {
-                    const sender = pc.getSenders().find(s => s.track.kind = videoTrack.kind)
+                    const sender = pc.getSenders().find(s => s.track.kind === videoTrack.kind)
                     await sender.replaceTrack(videoTrack)
                 }
             } catch (e) {
