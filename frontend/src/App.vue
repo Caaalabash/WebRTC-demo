@@ -107,7 +107,7 @@ export default {
             try {
                 this.localStream = await navigator.mediaDevices.getUserMedia(this.constraints)
             } catch (e) {
-                new LightTip().error('无法使用媒体设备, 请设置权限后刷新重试')
+                new LightTip().error(`设定相机失败: ${e.message}`)
             }
         },
         setupSocket() {
