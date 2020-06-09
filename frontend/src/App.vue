@@ -86,7 +86,7 @@ export default {
         createPeerConnection(stream, calleeId) {
             const pc = new RTCPeerConnection({
                 'iceServers': [
-                    {'urls': 'stun:111.229.115.45:3478'},
+                    {'urls': 'stun:111.229.115.45:3478', 'username': 'calabash', 'credential': 'calabashisbest' },
                     {'urls': 'turn:111.229.115.45:3478', 'username': 'calabash', 'credential': 'calabashisbest' }
                 ],
             })
