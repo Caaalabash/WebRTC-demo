@@ -109,13 +109,14 @@ export default {
                 // 关闭当前Stream中的所有媒体源, 移除peerConnection中的所有Stream
                 if (this.localStream) {
                     this.localStream.getTracks().forEach(track => track.stop())
-                    Object.values(this.pcMap).forEach(pc => pc.removeStream(this.localStream))
                 }
                 this.localStream = await navigator.mediaDevices.getUserMedia(this.constraints)
                 // 给pcMap中的peerConnection更换媒体源
-                Object.values(this.pcMap).forEach(pc => {
-                    this.localStream.getTracks().forEach(track => pc.addTrack(track))
-                })
+                const videoTrack = this.localStream.getVideoTracks()[0]
+                for (let pc of Object.values(this.pcMap)) {
+                    const sender = pc.getSenders().find(s => s.track.kind = videoTrack.kind)
+                    await sender.replaceTrack(videoTrack)
+                }
             } catch (e) {
                 new LightTip().error(`设定相机失败: ${e.message}`)
             }
