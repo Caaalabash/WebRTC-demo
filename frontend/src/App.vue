@@ -14,7 +14,10 @@
               <video :srcObject.prop="entry[1]" autoplay class="video"></video>
               <span class="video-from">{{ entry[0] }}</span>
           </div>
-          <div class="leave-button" @click="leaveRoom">&#10006;</div>
+          <div class="toolbar">
+              <div class="toolbar-button" @click="switchCamera">S</div>
+              <div class="toolbar-button" @click="leaveRoom">&#10006;</div>
+          </div>
       </div>
   </div>
 </template>
@@ -34,6 +37,7 @@ export default {
         localStream: null,
         pcMap: {},
         streamMap: {},
+        facingUser: true,
     }),
     computed: {
         totalStream() {
@@ -41,7 +45,23 @@ export default {
                 ...this.streamMap,
                 [`${this.name}(You)`]: this.localStream
             }
+        },
+        constraints() {
+            return {
+                audio: false,
+                video: {
+                    facingMode: this.facingUser ? 'user' : 'environment'
+                }
+            }
         }
+    },
+    watch: {
+        constraints: {
+            deep: true,
+            handler() {
+                this.setupYourCamera()
+            },
+        },
     },
     async mounted() {
         await this.setupYourCamera()
@@ -85,7 +105,7 @@ export default {
         },
         async setupYourCamera() {
             try {
-                this.localStream = await navigator.mediaDevices.getUserMedia({ audio: false, video: true })
+                this.localStream = await navigator.mediaDevices.getUserMedia(this.constraints)
             } catch (e) {
                 new LightTip().error('无法使用媒体设备, 请设置权限后刷新重试')
             }
@@ -137,6 +157,9 @@ export default {
                     this.streamMap = {}
                 }
             })
+        },
+        switchCamera() {
+            this.facingUser = !this.facingUser
         },
         leaveRoom() {
             this.socket.send({ type: 'leave' })
@@ -236,10 +259,14 @@ export default {
         line-height: 30px;
         text-align: center;
     }
-    .leave-button {
+    .toolbar {
         position: fixed;
         bottom: 20px;
         right: 20px;
+        display: flex;
+        flex-direction: column;
+    }
+    .toolbar-button {
         width: 40px;
         height: 40px;
         border-radius: 50%;
@@ -247,5 +274,6 @@ export default {
         background: #272727;
         text-align: center;
         line-height: 40px;
+        margin-bottom: 5px;
     }
 </style>
