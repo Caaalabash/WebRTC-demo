@@ -105,6 +105,9 @@ export default {
         },
         async setupYourCamera() {
             try {
+                if (this.localStream) {
+                    this.localStream.getTracks().forEach(track => track.stop())
+                }
                 this.localStream = await navigator.mediaDevices.getUserMedia(this.constraints)
             } catch (e) {
                 new LightTip().error(`设定相机失败: ${e.message}`)
